@@ -1,6 +1,4 @@
-
-# KPT Convolver – Tiny![Uploading Screenshot.png…]()
- Revival
+# KPT Convolver – Tiny Revival
 
 A small experimental image exploration tool inspired by the original **Kai’s Power Tools (KPT) Convolver**.
 
