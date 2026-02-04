@@ -1,4 +1,5 @@
 # KPT Convolver – Tiny Revival
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 A small experimental image exploration tool inspired by the original **Kai’s Power Tools (KPT) Convolver**.
 
@@ -8,6 +9,11 @@ It is a **design-space exploration tool**: instead of tweaking sliders, you expl
 Think **evolution**, not adjustment.
 
 ---
+<p align="center">
+  <img src="assets/Screenshot.png" width="600">
+  <br>
+  <em>Grid-based exploration with two filters</em>
+</p>
 
 ## What it does
 
@@ -60,7 +66,6 @@ This creates a fast, intuitive way to explore visual possibilities without commi
 - Saturation
 - Sharpen
 - Unsharpen
-- Noise
 - Gamma
 - Solarize
 
