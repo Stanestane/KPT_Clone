@@ -1,6 +1,6 @@
 ## Screenshot
 
-![KPT Convolver – grid exploration](assets/screenshot.png)
+![KPT Convolver – grid exploration](assets/Screenshot.png)
 
 # KPT Convolver – Tiny Revival
 
