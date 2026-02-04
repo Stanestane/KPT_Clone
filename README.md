@@ -63,7 +63,6 @@ This creates a fast, intuitive way to explore visual possibilities without commi
 - Saturation
 - Sharpen
 - Unsharpen
-- Noise
 - Gamma
 - Solarize
 
