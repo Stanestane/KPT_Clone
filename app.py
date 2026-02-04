@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image, ImageTk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
+from PIL import Image, ImageTk
 import os
 import random
 
@@ -53,7 +55,6 @@ def generate_grid(seed_img, filter_a_name, filter_b_name, a_scale, b_scale):
     a_neutral = fa["neutral"]
     b_neutral = fb["neutral"]
 
-    # Scale max away from neutral
     a_max = a_neutral + (a_max - a_neutral) * a_scale
     b_max = b_neutral + (b_max - b_neutral) * b_scale
 
@@ -97,7 +98,6 @@ class KPTExplorer:
         self.current_img = seed_img.convert("RGB")
         self.original_img = self.current_img.copy()
 
-
         # ---- FILTER STATE ----
         filter_names = list(filters.FILTERS.keys())
 
@@ -113,69 +113,60 @@ class KPTExplorer:
         # TOP BAR
         # =========================
 
-        top = tk.Frame(root)
-        top.pack(padx=10, pady=5, fill="x")
+        top = ttk.Frame(root, padding=10)
+        top.pack(fill="x")
 
-        tk.Button(top, text="Load", command=self.load_image).pack(side="left", padx=5)
-        tk.Button(top, text="Save", command=self.save_image).pack(side="left", padx=5)
-        tk.Button(top, text="Randomize", command=self.randomize).pack(side="left", padx=10)
-        tk.Button(top, text="Reset", command=self.reset_image).pack(side="left", padx=5)
+        ttk.Button(top, text="Load", command=self.load_image).pack(side="left", padx=4)
+        ttk.Button(top, text="Save", command=self.save_image).pack(side="left", padx=4)
+        ttk.Button(top, text="Reset", command=self.reset_image).pack(side="left", padx=4)
+        ttk.Button(top, text="Randomize", command=self.randomize).pack(side="left", padx=12)
 
-        tk.Label(top, text="Filter A").pack(side="left", padx=(20, 5))
-        tk.OptionMenu(
+        ttk.Label(top, text="Filter A").pack(side="left", padx=(20, 4))
+        self.filter_a_combo = ttk.Combobox(
             top,
-            self.filter_a_var,
-            *filter_names,
-            command=lambda _: self.render_grid()
-        ).pack(side="left")
-
-        self.a_slider = tk.Scale(
-            top,
-            from_=1,
-            to=5,
-            orient="horizontal",
-            showvalue=False,
-            length=100
+            textvariable=self.filter_a_var,
+            values=filter_names,
+            state="readonly",
+            width=18
         )
+        self.filter_a_combo.pack(side="left")
+        self.filter_a_combo.bind("<<ComboboxSelected>>", lambda e: self.render_grid())
+
+        self.a_slider = ttk.Scale(top, from_=1, to=5, length=100)
         self.a_slider.set(5)
-        self.a_slider.pack(side="left", padx=5)
+        self.a_slider.pack(side="left", padx=4)
         self.a_slider.bind("<ButtonRelease-1>", self.on_strength_release)
 
-        tk.Label(top, text="Filter B").pack(side="left", padx=(10, 5))
-        tk.OptionMenu(
+        ttk.Label(top, text="Filter B").pack(side="left", padx=(12, 4))
+        self.filter_b_combo = ttk.Combobox(
             top,
-            self.filter_b_var,
-            *filter_names,
-            command=lambda _: self.render_grid()
-        ).pack(side="left")
-
-        self.b_slider = tk.Scale(
-            top,
-            from_=1,
-            to=5,
-            orient="horizontal",
-            showvalue=False,
-            length=100
+            textvariable=self.filter_b_var,
+            values=filter_names,
+            state="readonly",
+            width=18
         )
+        self.filter_b_combo.pack(side="left")
+        self.filter_b_combo.bind("<<ComboboxSelected>>", lambda e: self.render_grid())
+
+        self.b_slider = ttk.Scale(top, from_=1, to=5, length=100)
         self.b_slider.set(5)
-        self.b_slider.pack(side="left", padx=5)
+        self.b_slider.pack(side="left", padx=4)
         self.b_slider.bind("<ButtonRelease-1>", self.on_strength_release)
 
         # =========================
         # PREVIEW
         # =========================
 
-        self.preview_label = tk.Label(root)
-        self.preview_label.pack(padx=10, pady=5)
+        self.preview_label = ttk.Label(root)
+        self.preview_label.pack(pady=6)
 
         # =========================
         # GRID
         # =========================
 
-        self.grid_frame = tk.Frame(root)
-        self.grid_frame.pack(padx=10, pady=10)
+        self.grid_frame = ttk.Frame(root, padding=10)
+        self.grid_frame.pack()
 
-        # Initial draw
         self.update_preview()
         self.render_grid()
 
@@ -190,7 +181,10 @@ class KPTExplorer:
         if not path:
             return
 
-        self.current_img = Image.open(path).convert("RGB")
+        img = Image.open(path).convert("RGB")
+        self.current_img = img
+        self.original_img = img.copy()
+
         self.update_preview()
         self.render_grid()
 
@@ -204,17 +198,17 @@ class KPTExplorer:
 
         self.current_img.save(path)
 
+    def reset_image(self):
+        self.current_img = self.original_img.copy()
+        self.update_preview()
+        self.render_grid()
+
     def update_preview(self):
         img = self.current_img.copy()
         img.thumbnail((config.THUMB_SIZE * config.GRID_WIDTH, 350))
         tk_img = ImageTk.PhotoImage(img)
         self.preview_label.configure(image=tk_img)
         self.preview_label.image = tk_img
-
-    def reset_image(self):
-        self.current_img = self.original_img.copy()
-        self.update_preview()
-        self.render_grid()
 
     # =========================
     # GRID
@@ -262,8 +256,12 @@ class KPTExplorer:
     # =========================
 
     def on_strength_release(self, event=None):
-        self.a_strength = STRENGTH_STEPS[self.a_slider.get()]
-        self.b_strength = STRENGTH_STEPS[self.b_slider.get()]
+        a_idx = int(round(self.a_slider.get()))
+        b_idx = int(round(self.b_slider.get()))
+
+        self.a_strength = STRENGTH_STEPS[a_idx]
+        self.b_strength = STRENGTH_STEPS[b_idx]
+
         self.render_grid()
 
     def randomize(self):
@@ -283,7 +281,8 @@ class KPTExplorer:
 # =========================
 
 def main():
-    root = tk.Tk()
+    root = ttk.Window(themename="darkly")
+
 
     if os.path.exists(config.DEFAULT_IMAGE_PATH):
         img = Image.open(config.DEFAULT_IMAGE_PATH)
