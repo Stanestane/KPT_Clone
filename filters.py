@@ -43,6 +43,10 @@ def hue_shift(img, strength):
 # OPTIONAL EXTRAS
 # (safe for evolution)
 # =========================
+def saturation(img, strength):
+    enhancer = ImageEnhance.Color(img)
+    return enhancer.enhance(strength)
+
 
 def contrast(img, strength):
     """
@@ -72,11 +76,6 @@ def sharpen(img, strength):
 
     enhancer = ImageEnhance.Sharpness(img)
     return enhancer.enhance(1.0 + strength)
-
-def blur(img, strength):
-    if strength <= 0:
-        return img
-    return img.filter(ImageFilter.GaussianBlur(radius=strength))
 
 
 def unsharp(img, strength):
@@ -113,3 +112,71 @@ def gamma(img, strength):
 
 def solarize(img, threshold):
     return ImageOps.solarize(img, int(threshold))
+
+# =========================
+# FILTER REGISTRY
+# =========================
+
+FILTERS = {
+    "Blur": {
+        "fn": blur,
+        "range": (0.0, 6.0),
+        "neutral": 0.0,
+    },
+
+    "Hue Shift (HSV)": {
+        "fn": hue_shift,
+        "range": (0.0, 0.25),
+        "neutral": 0.0,
+    },
+
+    "Contrast": {
+        "fn": contrast,
+        "range": (1.0, 2.0),
+        "neutral": 1.0,
+    },
+
+    "Brightness": {
+        "fn": brightness,
+        "range": (1.0, 2.0),
+        "neutral": 1.0,
+    },
+
+    "Saturation": {
+        "fn": saturation,
+        "range": (1.0, 2.0),
+        "neutral": 1.0,
+    },
+
+    "Sharpen": {
+        "fn": sharpen,
+        "range": (0.0, 1.5),
+        "neutral": 0.0,
+    },
+
+    "Noise": {
+        "fn": noise,
+        "range": (0.0, 10.0),
+        "neutral": 0.0,
+    },
+
+    "Unsharpen": {
+        "fn": unsharp,
+        "range": (0.0, 1.5),
+        "neutral": 0.0,
+    },
+
+    "Gamma": {
+        "fn": gamma,
+        "range": (1.0, 2.2),
+        "neutral": 1.0,
+    },
+
+    "Solarize": {
+        "fn": solarize,
+        "range": (255, 64),
+        "neutral": 255,
+    },
+}
+
+
