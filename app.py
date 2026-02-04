@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 
 import config
 import filters
+import os
 
 
 # =========================
@@ -273,15 +274,29 @@ class KPTExplorer:
 def main():
     root = tk.Tk()
 
-    path = filedialog.askopenfilename(
-        filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp")]
-    )
-    if not path:
-        return
+    img = None
 
-    img = Image.open(path)
+    if os.path.exists(config.DEFAULT_IMAGE_PATH):
+        try:
+            img = Image.open(config.DEFAULT_IMAGE_PATH)
+        except Exception as e:
+            print(f"Failed to load default image: {e}")
+
+    if img is None:
+        path = filedialog.askopenfilename(
+            title="Select seed image",
+            filetypes=[
+                ("Images", "*.png *.jpg *.jpeg *.bmp"),
+                ("All files", "*.*"),
+            ],
+        )
+        if not path:
+            return
+        img = Image.open(path)
+
     KPTExplorer(root, img)
     root.mainloop()
+
 
 
 if __name__ == "__main__":

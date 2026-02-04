@@ -53,3 +53,4 @@ NONLINEAR_GAMMA = 2.2
 
 # Render grid at reduced resolution for speed
 RENDER_SCALE = 0.5
+DEFAULT_IMAGE_PATH = "default.png"
