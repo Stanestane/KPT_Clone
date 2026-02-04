@@ -9,7 +9,7 @@ Think **evolution**, not adjustment.
 
 ---
 <p align="center">
-  <img src="assets/Screenshot.png" width="800">
+  <img src="assets/Screenshot.png" width="600">
   <br>
   <em>Grid-based exploration with two filters</em>
 </p>
