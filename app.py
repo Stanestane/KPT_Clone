@@ -1,13 +1,12 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 from PIL import Image, ImageTk
+
+import os
+import random
 
 import config
 import filters
-import os
-
-import random
-
 
 
 # =========================
@@ -42,7 +41,6 @@ def nonlinear(t, gamma):
 def generate_grid(seed_img, filter_a_name, filter_b_name, a_scale, b_scale):
     grid = []
 
-    # 1️ Look up filter metadata
     fa = filters.FILTERS[filter_a_name]
     fb = filters.FILTERS[filter_b_name]
 
@@ -55,7 +53,7 @@ def generate_grid(seed_img, filter_a_name, filter_b_name, a_scale, b_scale):
     a_neutral = fa["neutral"]
     b_neutral = fb["neutral"]
 
-    # 2️ Apply slider scaling to MAX ONLY
+    # Scale max away from neutral
     a_max = a_neutral + (a_max - a_neutral) * a_scale
     b_max = b_neutral + (b_max - b_neutral) * b_scale
 
@@ -66,7 +64,6 @@ def generate_grid(seed_img, filter_a_name, filter_b_name, a_scale, b_scale):
         if config.USE_NONLINEAR:
             ty = nonlinear(ty, config.NONLINEAR_GAMMA)
 
-        # THIS is where b_val is computed
         b_val = lerp(b_neutral, b_max, ty)
 
         for x in range(config.GRID_WIDTH):
@@ -74,10 +71,9 @@ def generate_grid(seed_img, filter_a_name, filter_b_name, a_scale, b_scale):
             if config.USE_NONLINEAR:
                 tx = nonlinear(tx, config.NONLINEAR_GAMMA)
 
-            # THIS is where your snippet lives
             a_val = lerp(a_neutral, a_max, tx)
 
-            img = seed_img.copy()
+            img = seed_img
             img = a_fn(img, a_val)
             img = b_fn(img, b_val)
 
@@ -97,41 +93,40 @@ class KPTExplorer:
         self.root = root
         self.root.title("KPT Convolver – Tiny Revival")
 
-        self.original_img = seed_img.convert("RGB")
-        self.current_img = self.original_img
+        # ---- IMAGE STATE ----
+        self.current_img = seed_img.convert("RGB")
+        self.original_img = self.current_img.copy()
 
-        self.filter_a_var = tk.StringVar(value=list(filters.FILTERS.keys())[0])
-        self.filter_b_var = tk.StringVar(value=list(filters.FILTERS.keys())[0])
 
-        self.filter_a_name = self.filter_a_var.get()
-        self.filter_b_name = self.filter_b_var.get()
+        # ---- FILTER STATE ----
+        filter_names = list(filters.FILTERS.keys())
+
+        self.filter_a_var = tk.StringVar(value=filter_names[0])
+        self.filter_b_var = tk.StringVar(
+            value=filter_names[1] if len(filter_names) > 1 else filter_names[0]
+        )
 
         self.a_strength = 1.0
         self.b_strength = 1.0
 
-        # ---- TOP BAR ----
+        # =========================
+        # TOP BAR
+        # =========================
+
         top = tk.Frame(root)
         top.pack(padx=10, pady=5, fill="x")
 
         tk.Button(top, text="Load", command=self.load_image).pack(side="left", padx=5)
         tk.Button(top, text="Save", command=self.save_image).pack(side="left", padx=5)
-        tk.Button(top, text="Randomize", command=self.randomize).pack(
-            side="left", padx=10
-        )
-
-
-        filter_names = list(filters.FILTERS.keys())
-
-        # ---- FILTER DROPDOWNS ----
-        self.filter_a_var = tk.StringVar(value=filter_names[0])
-        self.filter_b_var = tk.StringVar(value=filter_names[1] if len(filter_names) > 1 else filter_names[0])
+        tk.Button(top, text="Randomize", command=self.randomize).pack(side="left", padx=10)
+        tk.Button(top, text="Reset", command=self.reset_image).pack(side="left", padx=5)
 
         tk.Label(top, text="Filter A").pack(side="left", padx=(20, 5))
         tk.OptionMenu(
             top,
             self.filter_a_var,
             *filter_names,
-            command=self.on_filter_change
+            command=lambda _: self.render_grid()
         ).pack(side="left")
 
         self.a_slider = tk.Scale(
@@ -140,18 +135,18 @@ class KPTExplorer:
             to=5,
             orient="horizontal",
             showvalue=False,
-            command=self.on_strength_change,
             length=100
         )
         self.a_slider.set(5)
         self.a_slider.pack(side="left", padx=5)
+        self.a_slider.bind("<ButtonRelease-1>", self.on_strength_release)
 
         tk.Label(top, text="Filter B").pack(side="left", padx=(10, 5))
         tk.OptionMenu(
             top,
             self.filter_b_var,
             *filter_names,
-            command=self.on_filter_change
+            command=lambda _: self.render_grid()
         ).pack(side="left")
 
         self.b_slider = tk.Scale(
@@ -160,42 +155,28 @@ class KPTExplorer:
             to=5,
             orient="horizontal",
             showvalue=False,
-            command=self.on_strength_change,
             length=100
         )
         self.b_slider.set(5)
         self.b_slider.pack(side="left", padx=5)
+        self.b_slider.bind("<ButtonRelease-1>", self.on_strength_release)
 
-        # ---- PREVIEW ----
+        # =========================
+        # PREVIEW
+        # =========================
+
         self.preview_label = tk.Label(root)
         self.preview_label.pack(padx=10, pady=5)
 
-        # ---- GRID ----
+        # =========================
+        # GRID
+        # =========================
+
         self.grid_frame = tk.Frame(root)
         self.grid_frame.pack(padx=10, pady=10)
 
+        # Initial draw
         self.update_preview()
-        self.render_grid()
-
-    # =========================
-    # FILTER HANDLING
-    # =========================
-
-    def get_filter_name(self, fn):
-        for name, f in filters.FILTERS.items():
-            if f == fn:
-                return name
-        return list(filters.FILTERS.keys())[0]
-
-    def on_filter_change(self, _=None):
-        self.filter_a_name = self.filter_a_var.get()
-        self.filter_b_name = self.filter_b_var.get()
-        self.render_grid()
-
-
-    def on_strength_change(self, _=None):
-        self.a_strength = STRENGTH_STEPS[self.a_slider.get()]
-        self.b_strength = STRENGTH_STEPS[self.b_slider.get()]
         self.render_grid()
 
     # =========================
@@ -209,10 +190,7 @@ class KPTExplorer:
         if not path:
             return
 
-        img = Image.open(path)
-        self.original_img = img.convert("RGB")
-        self.current_img = self.original_img
-
+        self.current_img = Image.open(path).convert("RGB")
         self.update_preview()
         self.render_grid()
 
@@ -227,11 +205,16 @@ class KPTExplorer:
         self.current_img.save(path)
 
     def update_preview(self):
-        img = self.original_img.copy()
-        img.thumbnail((config.THUMB_SIZE * config.GRID_WIDTH, 300))
+        img = self.current_img.copy()
+        img.thumbnail((config.THUMB_SIZE * config.GRID_WIDTH, 350))
         tk_img = ImageTk.PhotoImage(img)
         self.preview_label.configure(image=tk_img)
         self.preview_label.image = tk_img
+
+    def reset_image(self):
+        self.current_img = self.original_img.copy()
+        self.update_preview()
+        self.render_grid()
 
     # =========================
     # GRID
@@ -271,25 +254,28 @@ class KPTExplorer:
 
     def select(self, img):
         self.current_img = img
+        self.update_preview()
+        self.render_grid()
+
+    # =========================
+    # CONTROLS
+    # =========================
+
+    def on_strength_release(self, event=None):
+        self.a_strength = STRENGTH_STEPS[self.a_slider.get()]
+        self.b_strength = STRENGTH_STEPS[self.b_slider.get()]
         self.render_grid()
 
     def randomize(self):
-        filter_names = list(filters.FILTERS.keys())
+        names = list(filters.FILTERS.keys())
 
-        # Pick random filters
-        self.filter_a_var.set(random.choice(filter_names))
-        self.filter_b_var.set(random.choice(filter_names))
+        self.filter_a_var.set(random.choice(names))
+        self.filter_b_var.set(random.choice(names))
 
-        # Pick random strength steps (1–5)
         self.a_slider.set(random.randint(1, 5))
         self.b_slider.set(random.randint(1, 5))
 
-        # Update internal strength values
-        self.on_strength_change()
-
-        # Re-render grid
-        self.render_grid()
-
+        self.on_strength_release()
 
 
 # =========================
@@ -299,21 +285,12 @@ class KPTExplorer:
 def main():
     root = tk.Tk()
 
-    img = None
-
     if os.path.exists(config.DEFAULT_IMAGE_PATH):
-        try:
-            img = Image.open(config.DEFAULT_IMAGE_PATH)
-        except Exception as e:
-            print(f"Failed to load default image: {e}")
-
-    if img is None:
+        img = Image.open(config.DEFAULT_IMAGE_PATH)
+    else:
         path = filedialog.askopenfilename(
             title="Select seed image",
-            filetypes=[
-                ("Images", "*.png *.jpg *.jpeg *.bmp"),
-                ("All files", "*.*"),
-            ],
+            filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp")]
         )
         if not path:
             return
@@ -321,7 +298,6 @@ def main():
 
     KPTExplorer(root, img)
     root.mainloop()
-
 
 
 if __name__ == "__main__":

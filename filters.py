@@ -178,5 +178,3 @@ FILTERS = {
         "neutral": 255,
     },
 }
-
-
