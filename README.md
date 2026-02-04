@@ -1,4 +1,5 @@
 # KPT Convolver – Tiny Revival
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 A small experimental image exploration tool inspired by the original **Kai’s Power Tools (KPT) Convolver**.
 
