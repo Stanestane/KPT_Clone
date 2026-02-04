@@ -120,7 +120,7 @@ def solarize(img, threshold):
 FILTERS = {
     "Blur": {
         "fn": blur,
-        "range": (0.0, 6.0),
+        "range": (0.0, 30.0),
         "neutral": 0.0,
     },
 
@@ -132,19 +132,19 @@ FILTERS = {
 
     "Contrast": {
         "fn": contrast,
-        "range": (1.0, 2.0),
+        "range": (1.0, 10.0),
         "neutral": 1.0,
     },
 
     "Brightness": {
         "fn": brightness,
-        "range": (1.0, 2.0),
+        "range": (1.0, 10.0),
         "neutral": 1.0,
     },
 
     "Saturation": {
         "fn": saturation,
-        "range": (1.0, 2.0),
+        "range": (1.0, 10.0),
         "neutral": 1.0,
     },
 
