@@ -6,6 +6,9 @@ import config
 import filters
 import os
 
+import random
+
+
 
 # =========================
 # CONSTANTS
@@ -112,6 +115,10 @@ class KPTExplorer:
 
         tk.Button(top, text="Load", command=self.load_image).pack(side="left", padx=5)
         tk.Button(top, text="Save", command=self.save_image).pack(side="left", padx=5)
+        tk.Button(top, text="Randomize", command=self.randomize).pack(
+            side="left", padx=10
+        )
+
 
         filter_names = list(filters.FILTERS.keys())
 
@@ -265,6 +272,24 @@ class KPTExplorer:
     def select(self, img):
         self.current_img = img
         self.render_grid()
+
+    def randomize(self):
+        filter_names = list(filters.FILTERS.keys())
+
+        # Pick random filters
+        self.filter_a_var.set(random.choice(filter_names))
+        self.filter_b_var.set(random.choice(filter_names))
+
+        # Pick random strength steps (1–5)
+        self.a_slider.set(random.randint(1, 5))
+        self.b_slider.set(random.randint(1, 5))
+
+        # Update internal strength values
+        self.on_strength_change()
+
+        # Re-render grid
+        self.render_grid()
+
 
 
 # =========================
