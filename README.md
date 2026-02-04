@@ -1,3 +1,7 @@
+## Screenshot
+
+![KPT Convolver – grid exploration](assets/screenshot.png)
+
 # KPT Convolver – Tiny Revival
 
 A small experimental image exploration tool inspired by the original **Kai’s Power Tools (KPT) Convolver**.
