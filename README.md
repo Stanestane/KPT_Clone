@@ -8,9 +8,11 @@ It is a **design-space exploration tool**: instead of tweaking sliders, you expl
 Think **evolution**, not adjustment.
 
 ---
-## Screenshot
-
-![KPT Convolver – grid exploration](assets/Screenshot.png)
+<p align="center">
+  <img src="assets/screenshot.png" width="800">
+  <br>
+  <em>Grid-based exploration with two filters</em>
+</p>
 
 ## What it does
 
