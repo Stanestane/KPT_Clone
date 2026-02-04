@@ -154,11 +154,11 @@ FILTERS = {
         "neutral": 0.0,
     },
 
-    "Noise": {
-        "fn": noise,
-        "range": (0.0, 10.0),
-        "neutral": 0.0,
-    },
+    #"Noise": {
+    #    "fn": noise,
+    #    "range": (0.0, 10.0),
+    #    "neutral": 0.0,
+    #},
 
     "Unsharpen": {
         "fn": unsharp,
