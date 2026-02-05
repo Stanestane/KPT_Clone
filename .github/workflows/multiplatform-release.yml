@@ -14,50 +14,82 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    name: Build on ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Upgrade pip and install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller pillow numpy ttkbootstrap
+          pip install --no-cache-dir pyinstaller pillow numpy ttkbootstrap
 
       - name: Build executable
-        shell: bash  # use bash even on Windows for consistency
+        shell: bash
         run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             pyinstaller --onefile --windowed \
               --icon=assets/KPT_icon.ico \
               --add-data "default.png;." \
               --name KPT_Evolver \
               app.py
-            mv dist/KPT_Evolver.exe dist/KPT_Evolver_${{ runner.os }}.exe
+            # Rename if needed (your original logic)
+            mv dist/KPT_Evolver.exe dist/KPT_Evolver_Windows.exe || true
+            ARTIFACT_PATH="dist/KPT_Evolver_Windows.exe"
           else
-            pyinstaller --onefile --windowed \
+            # macOS: onedir + zip the .app (as fixed earlier)
+            pyinstaller --onedir --windowed \
               --icon=assets/KPT_icon.icns \
               --add-data "default.png:." \
               --name KPT_Evolver \
               app.py
-            mv dist/KPT_Evolver dist/KPT_Evolver_${{ runner.os }}
+            cd dist
+            zip -r KPT_Evolver_macOS.zip KPT_Evolver.app
+            cd ..
+            ARTIFACT_PATH="dist/KPT_Evolver_macOS.zip"
           fi
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KPT_Evolver_${{ runner.os }}
-          path: dist/KPT_Evolver_${{ runner.os }}*
+          name: KPT_Evolver_${{ matrix.os == 'windows-latest' && 'Windows' || 'macOS' }}
+          path: ${{ env.ARTIFACT_PATH || 'dist/*' }}  # fallback
+          if-no-files-found: error
 
-      - name: Create GitHub Release
-        if: runner.os == 'macOS'  # only one job uploads to avoid duplicates
+  release:
+    runs-on: ubuntu-latest  # lightweight, no need for heavy runner
+    needs: build           # waits for ALL matrix builds to finish
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout (for any release notes/scripts if needed)
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/          # downloads all into subfolders like artifacts/KPT_Evolver_Windows/...
+          pattern: KPT_Evolver_*    # matches both Windows and macOS artifacts
+          merge-multiple: true      # flattens into one dir if you prefer (optional)
+
+      - name: List downloaded files (debug)
+        run: ls -R artifacts/
+
+      - name: Create GitHub Release and upload all assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/KPT_Evolver_Windows.exe
-            dist/KPT_Evolver_macOS
+            artifacts/KPT_Evolver_Windows/KPT_Evolver_Windows.exe
+            artifacts/KPT_Evolver_macOS/KPT_Evolver_macOS.zip
+          # Adjust exact paths based on your artifact names / download structure
+          # Or use a glob if flattened: artifacts/**/*.exe artifacts/**/*.zip
           generate_release_notes: true
+          draft: false
+          prerelease: false
+          # Optional: fail_on_unmatched_files: false  (if some paths might miss)
