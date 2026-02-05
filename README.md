@@ -91,4 +91,4 @@ This keeps evolution stable across many generations.
 Install dependencies:
 
 ```bash
-pip install pillow
+pip install pillow numpy ttkbootstrap
