@@ -1,4 +1,4 @@
-# KPT Convolver – Tiny Revival
+# KPT Evolver – Tiny Revival
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 A small experimental image exploration tool inspired by the original **Kai’s Power Tools (KPT) Convolver**.
@@ -7,6 +7,12 @@ This is **not** an image editor in the traditional sense.
 It is a **design-space exploration tool**: instead of tweaking sliders, you explore a grid of variations, pick one, and iterate.
 
 Think **evolution**, not adjustment.
+
+## Download
+
+👉 **Windows build:**  
+Download the latest executable from the  
+[Releases page](../../releases)
 
 ---
 <p align="center">
