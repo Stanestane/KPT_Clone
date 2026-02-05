@@ -10,7 +10,7 @@ Think **evolution**, not adjustment.
 
 ## Download
 
-👉 **Windows build:**  
+👉 **Windows or MacOS build:**  
 Download the latest executable from the  
 [Releases page](../../releases)
 
