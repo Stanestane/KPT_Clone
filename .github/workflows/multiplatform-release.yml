@@ -29,7 +29,7 @@ jobs:
       - name: Build executable with PyInstaller
         run: |
           pyinstaller --onefile --windowed \
-            --icon=assets/KPT_icon.icns \
+            --icon=assets/KPT_icon.ico \
             --add-data "default.png:." \
             --name KPT_Evolver \
             app.py
