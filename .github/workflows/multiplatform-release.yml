@@ -1,4 +1,4 @@
-name: macOS Release Build
+name: Multi-Platform Release Builds
 
 on:
   push:
@@ -9,43 +9,55 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Upgrade pip and install dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --no-cache-dir pyinstaller pillow numpy ttkbootstrap
+          pip install pyinstaller pillow numpy ttkbootstrap
 
-      - name: Build executable with PyInstaller
+      - name: Build executable
+        shell: bash  # use bash even on Windows for consistency
         run: |
-          pyinstaller --onefile --windowed \
-            --icon=assets/KPT_icon.ico \
-            --add-data "default.png:." \
-            --name KPT_Evolver \
-            app.py
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            pyinstaller --onefile --windowed \
+              --icon=assets/KPT_icon.ico \
+              --add-data "default.png;." \
+              --name KPT_Evolver \
+              app.py
+            mv dist/KPT_Evolver.exe dist/KPT_Evolver_${{ runner.os }}.exe
+          else
+            pyinstaller --onefile --windowed \
+              --icon=assets/KPT_icon.icns \
+              --add-data "default.png:." \
+              --name KPT_Evolver \
+              app.py
+            mv dist/KPT_Evolver dist/KPT_Evolver_${{ runner.os }}
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KPT_Evolver_macOS
-          path: dist/KPT_Evolver
-          if-no-files-found: error
+          name: KPT_Evolver_${{ runner.os }}
+          path: dist/KPT_Evolver_${{ runner.os }}*
 
       - name: Create GitHub Release
+        if: runner.os == 'macOS'  # only one job uploads to avoid duplicates
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/KPT_Evolver
+          files: |
+            dist/KPT_Evolver_Windows.exe
+            dist/KPT_Evolver_macOS
           generate_release_notes: true
-          draft: false
-          prerelease: false
