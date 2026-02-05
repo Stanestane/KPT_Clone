@@ -113,6 +113,40 @@ def gamma(img, strength):
 def solarize(img, threshold):
     return ImageOps.solarize(img, int(threshold))
 
+def posterize(img, strength):
+    """
+    Posterize image.
+    strength maps to number of bits per channel.
+    """
+    bits = int(round(strength))
+    bits = max(1, min(bits, 8))
+    return ImageOps.posterize(img, bits)
+
+def autocontrast(img, strength):
+    """
+    Autocontrast with cutoff.
+    strength controls cutoff percentage.
+    """
+    cutoff = int(round(strength))
+    cutoff = max(0, min(cutoff, 20))
+    return ImageOps.autocontrast(img, cutoff=cutoff)
+
+def equalize(img, strength):
+    """
+    Histogram equalization.
+    strength blends original with equalized image.
+    """
+    if strength <= 0:
+        return img
+
+    eq = ImageOps.equalize(img)
+    if strength >= 1:
+        return eq
+
+    # Blend for smoother exploration
+    return Image.blend(img, eq, strength)
+
+
 # =========================
 # FILTER REGISTRY
 # =========================
@@ -176,5 +210,23 @@ FILTERS = {
         "fn": solarize,
         "range": (255, 64),
         "neutral": 255,
+    },
+
+    "Posterize": {
+        "fn": posterize,
+        "range": (8, 1),
+        "neutral": 8,
+    },
+    
+    "Autocontrast": {
+        "fn": autocontrast,
+        "range": (0, 20),
+        "neutral": 0,
+    },
+    
+    "Equalize": {
+        "fn": equalize,
+        "range": (0.0, 1.0),
+        "neutral": 0.0,
     },
 }
