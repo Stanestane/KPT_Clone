@@ -35,7 +35,7 @@ jobs:
 
       - name: Rename EXE
         run: |
-          rename dist\\app.exe KPT-Explorer-Windows.exe
+          rename dist\\app.exe KPT_Evolver_x64.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
