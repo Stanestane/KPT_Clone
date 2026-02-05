@@ -26,6 +26,7 @@ jobs:
           pip install pyinstaller pillow numpy ttkbootstrap
 
       - name: Build EXE with PyInstaller
+        shell: cmd
         run: |
           pyinstaller --onefile --windowed ^
             --icon assets/KPT_icon.ico ^
@@ -39,8 +40,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KPT-Explorer-Windows
-          path: dist/KPT-Explorer-Windows.exe
+          name: KPT_Evolver_x64
+          path: dist/KPT_Evolver_x64.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
