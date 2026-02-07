@@ -1,13 +1,16 @@
-name: Windows Release Build
+name: macOS Release Build
 
 on:
   push:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-macos:
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -23,34 +26,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install --no-cache-dir pyinstaller pillow numpy ttkbootstrap
 
-      - name: Build executable with PyInstaller
-        shell: cmd
+      - name: Build macOS app bundle with PyInstaller
         run: |
-          pyinstaller --onefile --windowed ^
-            --icon=assets\KPT_icon.ico ^
-            --add-data "default.png;." ^
-            --name KPT_Evolver ^
+          pyinstaller --onedir --windowed \
+            --icon=assets/KPT_icon.icns \
+            --add-data "default.png:." \
+            --name KPT_Evolver \
             app.py
 
-      - name: Rename output executable (just in case)
-        shell: cmd
+      - name: Zip the .app bundle for easier distribution
         run: |
-          if exist dist\KPT_Evolver.exe (
-            ren dist\KPT_Evolver.exe KPT_Evolver_x64.exe
-          )
+          cd dist
+          zip -r KPT_Evolver_macOS.zip KPT_Evolver.app
 
-      - name: Upload artifact
+      - name: Upload artifact (zipped .app)
         uses: actions/upload-artifact@v4
         with:
-          name: KPT_Evolver_x64
-          path: dist/KPT_Evolver_x64.exe
+          name: KPT_Evolver_macOS
+          path: dist/KPT_Evolver_macOS.zip
           if-no-files-found: error
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: dist/KPT_Evolver_x64.exe
+          files: dist/KPT_Evolver_macOS.zip
           generate_release_notes: true
           draft: false
           prerelease: false
