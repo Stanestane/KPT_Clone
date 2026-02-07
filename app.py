@@ -97,13 +97,37 @@ class KPTExplorer:
 
         self.is_rendering = False
 
-        # ---- IMAGE STATE ----
+        # ───────────────────────────────────────
+        #  Create main scrollable canvas + scrollbar
+        # ───────────────────────────────────────
+        self.canvas = tk.Canvas(root, highlightthickness=0, bg="#2b2b2b")
+        self.scrollbar = ttk.Scrollbar(root, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        self.root.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.root.bind_all("<Button-4>", lambda e: self.canvas.yview_scroll(-1, "units"))
+        self.root.bind_all("<Button-5>", lambda e: self.canvas.yview_scroll(1, "units"))
+
+        # ───────────────────────────────────────
+        # Image & filter STATE — create FIRST!
+        # ───────────────────────────────────────
         self.current_img = seed_img.convert("RGB")
         self.original_img = self.current_img.copy()
 
-        # ---- FILTER STATE ----
         filter_names = list(filters.FILTERS.keys())
 
+        # Create StringVars here — before any widget uses them
         self.filter_a_var = tk.StringVar(value=filter_names[0])
         self.filter_b_var = tk.StringVar(
             value=filter_names[1] if len(filter_names) > 1 else filter_names[0]
@@ -112,12 +136,13 @@ class KPTExplorer:
         self.a_strength = 1.0
         self.b_strength = 1.0
 
-        # =========================
-        # TOP BAR
-        # =========================
+        # ───────────────────────────────────────
+        # Now build UI using the variables we just created
+        # ───────────────────────────────────────
 
-        top = ttk.Frame(root, padding=10)
-        top.pack(fill="x")
+        # Top controls bar
+        top = ttk.Frame(self.scrollable_frame, padding=10)
+        top.pack(fill="x", pady=(0, 10))
 
         self.controls = []
 
@@ -134,7 +159,7 @@ class KPTExplorer:
         self.filter_a_combo = ctl(
             ttk.Combobox(
                 top,
-                textvariable=self.filter_a_var,
+                textvariable=self.filter_a_var,          # now safe
                 values=filter_names,
                 state="readonly",
                 width=18
@@ -152,7 +177,7 @@ class KPTExplorer:
         self.filter_b_combo = ctl(
             ttk.Combobox(
                 top,
-                textvariable=self.filter_b_var,
+                textvariable=self.filter_b_var,          # now safe
                 values=filter_names,
                 state="readonly",
                 width=18
@@ -166,37 +191,34 @@ class KPTExplorer:
         self.b_slider.pack(side="left", padx=4)
         self.b_slider.bind("<ButtonRelease-1>", self.on_strength_release)
 
-        # =========================
-        # PREVIEW
-        # =========================
-
+        # Preview
         self.preview_label = tk.Label(
-            root,
+            self.scrollable_frame,
             bd=0,
-            relief="solid"
+            relief="solid",
+            bg="#2b2b2b"
         )
-        self.preview_label.pack(pady=6)
+        self.preview_label.pack(pady=10)
 
-        # =========================
-        # GRID
-        # =========================
-
-        self.grid_frame = ttk.Frame(root, padding=10)
+        # Grid
+        self.grid_frame = ttk.Frame(self.scrollable_frame, padding=10)
         self.grid_frame.pack()
 
-        # =========================
-        # PROGRESSBAR OVERLAY
-        # =========================
-
+        # Progressbar (overlay on root)
         self.loader = ttk.Progressbar(
             root,
-            mode="determinate",
+            mode="indeterminate",
             bootstyle="info striped",
             length=320
         )
 
+        # Final renders
         self.update_preview()
         self.render_grid()
+
+    # Mouse wheel handler
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
     # =========================
     # SPINNER + STATE
@@ -259,10 +281,38 @@ class KPTExplorer:
         self.render_grid()
 
     def update_preview(self):
+        """
+        Update the large preview image at the top of the scrollable area.
+        Resizes the current image to fit nicely without re-packing the label.
+        """
+        if not hasattr(self, 'current_img') or self.current_img is None:
+            return
+
+        # Make a working copy
         img = self.current_img.copy()
-        img.thumbnail((config.THUMB_SIZE * config.GRID_WIDTH, 350))
+
+        # Choose a reasonable max size — adjust these numbers to taste
+        # Option A: fixed size based on config (original style)
+        #max_width = config.THUMB_SIZE * config.GRID_WIDTH   # e.g. 900 if 5×180
+        #max_height = 350
+
+        max_width = 240
+        max_height = 240
+
+        # Option B: more responsive to window width (recommended)
+        # max_width = int(self.root.winfo_width() * 0.85) if self.root.winfo_width() > 200 else 800
+        # max_height = 450
+
+        # Resize while preserving aspect ratio
+        img.thumbnail((max_width, max_height), Image.LANCZOS)
+
+        # Convert to PhotoImage for tkinter
         tk_img = ImageTk.PhotoImage(img)
+
+        # Update the existing label (no .pack() needed anymore!)
         self.preview_label.configure(image=tk_img)
+
+        # Very important: keep a strong reference so the image isn't garbage-collected
         self.preview_label.image = tk_img
 
     # =========================
@@ -360,6 +410,8 @@ class KPTExplorer:
 
 def main():
     root = ttk.Window(themename="darkly")
+    root.geometry("1100x750")           # initial size (width × height)
+    root.minsize(850, 600)
 
     if os.path.exists(config.DEFAULT_IMAGE_PATH):
         img = Image.open(config.DEFAULT_IMAGE_PATH)

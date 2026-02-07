@@ -6,7 +6,7 @@
 GRID_WIDTH = 5
 GRID_HEIGHT = 5
 
-THUMB_SIZE = 180
+THUMB_SIZE = 120
 
 
 # =========================
